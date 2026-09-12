@@ -1,0 +1,21 @@
+# Learn more about configuring your checkout UI extension:
+# https://shopify.dev/docs/api/checkout-ui-extensions/latest/configuration
+
+api_version = "2026-07"
+
+[[extensions]]
+name = "title-block"
+handle = "title-block"
+type = "ui_extension"
+uid = "9a6cc1ec-6121-cb46-22d3-f11590af6f223880e27f"
+
+[[extensions.targeting]]
+module = "./src/Checkout.jsx"
+target = "purchase.checkout.block.render"
+
+[extensions.settings]
+[[extensions.settings.fields]]
+key = "title"
+type = "single_line_text_field"
+name = "Titleee"
+description = "Text displayed in checkout"
