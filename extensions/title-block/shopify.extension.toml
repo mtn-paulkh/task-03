@@ -10,12 +10,29 @@ type = "ui_extension"
 uid = "9a6cc1ec-6121-cb46-22d3-f11590af6f223880e27f"
 
 [[extensions.targeting]]
-module = "./src/Checkout.jsx"
+module = "./src/index.js"
 target = "purchase.checkout.block.render"
+
+[extensions.capabilities]
+api_access = true
+
+[[extensions.metafields]]
+namespace = "$app:custom"
+key = "warranty_days"
 
 [extensions.settings]
 [[extensions.settings.fields]]
 key = "title"
 type = "single_line_text_field"
-name = "Titleee"
+name = "Title"
 description = "Text displayed in checkout"
+
+[[extensions.settings.fields]]
+key = "add_button"
+type = "single_line_text_field"
+name = "Add button text"
+
+[[extensions.settings.fields]]
+key = "variant"
+type = "variant_reference"
+name = "Product variant"
