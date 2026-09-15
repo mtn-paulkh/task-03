@@ -1,0 +1,31 @@
+export const Card = ({
+  src,
+  title,
+  description,
+  price,
+}: {
+  src?: string;
+  title?: string;
+  description?: string;
+  price?: string;
+}) => {
+  return (
+    <s-box
+      padding="base"
+      border="base"
+      borderRadius="base"
+      background="subdued"
+    >
+      <s-stack direction="block" gap="small">
+        {src ? (
+          <s-box maxBlockSize="30%" maxInlineSize="30%">
+            <s-image src={src} alt={title ?? ""} />
+          </s-box>
+        ) : null}
+        {price ? <s-text type="strong">{price}</s-text> : null}
+        {title ? <s-heading>{title}</s-heading> : null}
+        {description ? <s-text color="subdued">{description}</s-text> : null}
+      </s-stack>
+    </s-box>
+  );
+};
