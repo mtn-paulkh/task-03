@@ -21,7 +21,12 @@ export const Card = ({
     );
   }
   return (
-    <s-box padding="base" border="base" borderRadius="base">
+    <s-box
+      padding="base"
+      border="base"
+      borderRadius="base"
+      background="subdued"
+    >
       <s-stack direction="block" gap="small">
         {src ? (
           <s-box maxBlockSize="30%" maxInlineSize="30%">

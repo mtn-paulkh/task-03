@@ -1,15 +1,14 @@
 import '@shopify/ui-extensions/preact';
 
-import {useSettings} from '@shopify/ui-extensions/checkout/preact';
 import { useCard } from '../model/use-card';
+import { useExtensionSettings } from '../model/use-extension-settings';
 import { Card } from '../ui/card';
 import { useAddWarranty } from '../model/use-add-warranty';
 import { useWarrantyAdded } from '../model/use-warranty-added';
 import { useHasWarrantyDaysInCart } from '../model/use-has-warranty-days-in-cart';
 
 export const Extension = () => {
-  const { title = 'Default title', variant = '', add_button = 'Add to cart' } = useSettings();
-  const variantId = variant.toString();
+  const { title, add_button, variant: variantId } = useExtensionSettings();
   const hasWarrantyDaysInCart = useHasWarrantyDaysInCart();
   const warrantyAdded = useWarrantyAdded({ variant: variantId });
   const { handleAddWarranty, isLoading, error, clearError } = useAddWarranty({
@@ -43,12 +42,14 @@ export const Extension = () => {
               : undefined
           }
         />
+
         <s-button
           loading={isLoading}
-          disabled={isLoading || warrantyAdded}
+          disabled={isLoading}
           onClick={handleAddWarranty}
-        >
-          {warrantyAdded ? 'Added' : add_button}
+          variant='primary'
+          >
+          {add_button}
         </s-button>
       </s-stack>
     </s-box>

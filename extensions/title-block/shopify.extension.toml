@@ -25,12 +25,13 @@ key = "warranty_days"
 key = "title"
 type = "single_line_text_field"
 name = "Title"
-description = "Text displayed in checkout"
+description = "Text displayed in checkout. If empty, the app uses \"Default title\"."
 
 [[extensions.settings.fields]]
 key = "add_button"
 type = "single_line_text_field"
 name = "Add button text"
+description = "If empty, the app uses \"Add to cart\"."
 
 [[extensions.settings.fields]]
 key = "variant"
