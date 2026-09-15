@@ -1,173 +1,70 @@
-# task-03 — Minimal Shopify App + Checkout Extension
+# task-03
 
-Минимальное Shopify-приложение с одной Checkout UI extension `title-block`.
-Extension показывает merchant-настройку **Title** в checkout (target: `purchase.checkout.block.render`).
+Shopify-приложение с checkout UI extension **title-block**: upsell гарантии в checkout. Блок показывается, если в корзине есть товар с заполненным metafield **Warranty days**, и предлагает добавить отдельный variant гарантии одной кнопкой. Добавление через блок помечается атрибутами на line item (см. [docs/order-trace.md](docs/order-trace.md)).
 
-## Стек
-
-- Shopify App (React Router template) — OAuth shell
-- Checkout UI extension `extensions/title-block` — единственная «фича»
-- API version: `2026-07`
-
-## Быстрый старт
-
-### 1. Установить app на dev store
-
-**Вариант A — через CLI (рекомендуется):**
-
-```bash
-cd task-03
-shopify app dev -s test-lh0ojzye.myshopify.com
-```
-
-CLI откроет браузер для OAuth и установит app на store.
-
-> Если tunnel падает (`cloudflared EPERM`) — запусти терминал от администратора или используй `--use-localhost --install-mkcert` (нужны права на установку CA).
-
-**Вариант B — вручную через Partners Dashboard:**
-
-1. [Dev Dashboard → task-03](https://dev.shopify.com/dashboard/233577832/apps/422061080577)
-2. **Test on development store** → выбрать `test-lh0ojzye.myshopify.com`
-
-**Вариант C — install link:**
-
-```
-https://admin.shopify.com/store/test-lh0ojzye/oauth/install?client_id=7390491037930ed495892bf47b45d215
-```
-
-### 2. Включить extension в checkout
-
-1. Admin → **Settings → Checkout → Customize**
-2. **Add app block** → **title-block**
-3. Заполнить поле **Title** (например: `Welcome to our store`)
-4. **Save**
-
-### 3. Проверить
-
-Добавь товар в корзину → перейди в checkout → увидишь heading с заданным title.
-
-## Deploy
-
-```bash
-shopify app config validate --json   # проверка конфигов
-shopify app deploy --allow-updates     # публикация версии
-```
-
-Последняя версия: **task-03-2** — [Dev Dashboard](https://dev.shopify.com/dashboard/233577832/apps/422061080577/versions/1124705173505)
-
-## Структура extension
-
-```
-extensions/title-block/
-├── shopify.extension.toml   # target + setting "title"
-└── src/Checkout.jsx         # читает shopify.settings.value.title
-```
-
-### Код extension
-
-```jsx
-const title = shopify.settings.value.title ?? 'Default title';
-
-return (
-  <s-box padding="base">
-    <s-heading>{title}</s-heading>
-  </s-box>
-);
-```
-
-Setting определяется в `shopify.extension.toml`:
-
-```toml
-[extensions.settings]
-[[extensions.settings.fields]]
-key = "title"
-type = "single_line_text_field"
-name = "Title"
-description = "Text displayed in checkout"
-```
-
----
-
-## Пути получения данных
-
-### A. Checkout UI Extension (без своего backend)
-
-Данные **reactive** — уже в контексте checkout, fetch не нужен.
-
-| API | Что даёт | Пример |
-|-----|----------|--------|
-| **Settings** | Merchant config | `shopify.settings.value.title` ← **наш кейс** |
-| **Shop** | name, domain | `shopify.shop.myshopifyDomain` |
-| **Cart Lines** | товары, qty, variant | `shopify.lines.value` |
-| **Cost** | subtotal, total, tax | `shopify.cost.totalAmount` |
-| **Buyer Identity** | email, phone, customer | `shopify.buyerIdentity.email` |
-| **Localization** | currency, country, language | `shopify.localization.country.isoCode` |
-| **Attributes** | cart note, custom attrs | `shopify.attributes` |
-| **Metafields** | cart/shop/product meta | `shopify.appMetafields` |
-| **Storage** | local KV в extension | `shopify.storage.read('key')` |
-| **Analytics** | publish events | `shopify.analytics.publish('event', data)` |
-| **Storefront API** | GraphQL из extension | `shopify.query(query, {variables})` (нужен `api_access = true`) |
-
-Подписка на изменения:
-
-```jsx
-shopify.lines.subscribe((lines) => {
-  console.log(lines);
-});
-```
-
-### B. App Backend (Admin GraphQL)
-
-Когда нужны products, orders, customers вне checkout sandbox:
-
-```
-Admin UI (embedded app)
-    │ Session Token (JWT per request)
-    ▼
-App Backend (Node/Rails/etc.)
-    │ Admin GraphQL API
-    ▼
-Shopify Admin (products, orders, metafields...)
-```
-
-- **Session Token** — `authenticate.admin(request)` в React Router template
-- **Admin GraphQL** — scopes в `shopify.app.toml` (`write_products`, etc.)
-- **Webhooks** — push events (`orders/create`, `app/uninstalled`)
-- **Offline access token** — background jobs без user session
-
-Для `title-block` backend **не используется** — Settings читаются напрямую в extension.
-
-### C. Theme / Storefront (контекст)
-
-| Путь | Где | Для чего |
-|------|-----|----------|
-| **Liquid** | Theme templates | `{{ product.title }}`, `{{ cart.item_count }}` |
-| **Storefront GraphQL** | Headless storefront | Products, cart mutations |
-| **Theme App Extensions** | Online Store theme | App blocks в theme (не checkout) |
-
-### D. Кто задаёт данные
-
-| Данные | Источник | Кто настраивает |
-|--------|----------|-----------------|
-| `title` | Extension Settings | Merchant в Checkout Editor |
-| Cart / products | Checkout session | Покупатель |
-| Shop info | Shop API | Shopify |
-| Business logic data | Metafields / Admin API | App backend или Admin |
-
----
-
-## Полезные команды
-
-```bash
-shopify app info              # app + extensions info
-shopify app build             # build extensions
-shopify store list            # dev stores
-shopify organization list     # partner orgs
-```
+Backend app нужен для OAuth и установки; логика upsell выполняется в extension на checkout.
 
 ## Требования
 
-- Node.js 18+
-- Shopify CLI 4.x
-- Dev store с **Checkout Extensibility** (Plus или compatible plan)
+- Node.js 20.19+ (см. `package.json`)
+- [Shopify CLI](https://shopify.dev/docs/api/shopify-cli) 4.x
+- Development store с **Checkout extensibility**
 - Partner account
+
+## Запуск
+
+```bash
+cd task-03
+npm install
+shopify app dev -s <your-dev-store>.myshopify.com
+```
+
+CLI установит app на store (OAuth), поднимет tunnel и соберёт extension. Открой checkout с витрины магазина, не только preview в редакторе.
+
+Публикация версии:
+
+```bash
+shopify app deploy
+```
+
+## Данные в админке для тестирования
+
+### 1. Установить app
+
+Через `shopify app dev` или **Partners → Apps → task-03 → Test on development store**.
+
+### 2. Платежи (чтобы дойти до заказа)
+
+**Settings → Payments** → включён **Тестовый платежный шлюз** (Bogus). В checkout в поле номера карты вводи **`1`** (успех), не `4242…` — это карты для Shopify Payments test mode.
+
+### 3. Товары
+
+Нужны **два** продукта (или один основной + один «гарантия»):
+
+| Роль                  | Что настроить                                                                                                                                                                                        |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Основной товар**    | Опубликован в Online Store, можно добавить в корзину. Metafield **Warranty days** (`custom.warranty_days`, тип integer) — любое число **> 0**, например `365`. Без него блок в checkout не появится. |
+| **Гарантия (upsell)** | Отдельный product/variant с ценой, **Available** и опубликован для storefront (extension читает variant через Storefront API).                                                                       |
+
+Metafield **Warranty days** объявлен в [shopify.app.toml](shopify.app.toml); после deploy заполнить в **Products → [товар] → Metafields** (или через bulk editor).
+
+Extension читает metafield продукта в namespace **`$app:custom`** / key **`warranty_days`** — это app-owned поле, связанное с определением в app. Если в админке видишь только `custom.warranty_days`, используй definition приложения после установки; значение должно быть непустым.
+
+### 4. Checkout extension
+
+**Settings → Checkout → Customize** → **Add app block** → **title-block** → разместить на странице checkout → **Save**.
+
+| Setting             | Для теста                                                                                        |
+| ------------------- | ------------------------------------------------------------------------------------------------ |
+| **Title**           | Заголовок блока (если пусто — в checkout будет «Default title»).                                 |
+| **Add button text** | Текст кнопки (если пусто — «Add to cart»).                                                       |
+| **Product variant** | Variant товара **гарантии** из шага 3. **Обязательно** — без него карточка и кнопка не работают. |
+
+### 5. Сценарий проверки
+
+1. На витрине: в корзину только **основной товар** (с Warranty days).
+2. Checkout: виден блок title-block → **Add** → в order summary появилась строка гарантии.
+3. Оплата тестовым шлюзом (`1` → Pay now).
+4. **Orders** → заказ → на line item гарантии: `_warranty_source` = `title-block`, `Warranty source` = `Checkout upsell`.
+
+Сравнение: добавь тот же variant гарантии с витрины без блока — в заказе не будет `_warranty_source`.

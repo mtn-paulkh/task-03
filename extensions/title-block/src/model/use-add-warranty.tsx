@@ -1,11 +1,13 @@
-import { useApplyCartLinesChange } from "@shopify/ui-extensions/checkout/preact";
+import {
+  useApplyCartLinesChange,
+  useTranslate,
+} from "@shopify/ui-extensions/checkout/preact";
 import { useState } from "preact/hooks";
+import { I18N } from "../pure-model/i18n-keys";
 import { WARRANTY_TRACE_LINE_ATTRIBUTES } from "../pure-model/warranty-trace";
 
-const BUYER_ERROR_MESSAGE =
-  "Couldn't add warranty to your cart. Please try again.";
-
 export const useAddWarranty = ({ variant }: { variant: string }) => {
+  const translate = useTranslate();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const applyCartLinesChange = useApplyCartLinesChange();
@@ -23,10 +25,10 @@ export const useAddWarranty = ({ variant }: { variant: string }) => {
         attributes: WARRANTY_TRACE_LINE_ATTRIBUTES,
       });
       if (result.type === "error") {
-        setError(BUYER_ERROR_MESSAGE);
+        setError(translate(I18N.addWarrantyError));
       }
     } catch {
-      setError(BUYER_ERROR_MESSAGE);
+      setError(translate(I18N.addWarrantyError));
     } finally {
       setIsLoading(false);
     }

@@ -1,5 +1,7 @@
 import '@shopify/ui-extensions/preact';
 
+import { useTranslate } from '@shopify/ui-extensions/checkout/preact';
+import { I18N } from '../pure-model/i18n-keys';
 import { useCard } from '../model/use-card';
 import { useExtensionSettings } from '../model/use-extension-settings';
 import { Card } from '../ui/card';
@@ -8,6 +10,7 @@ import { useWarrantyAdded } from '../model/use-warranty-added';
 import { useHasWarrantyDaysInCart } from '../model/use-has-warranty-days-in-cart';
 
 export const Extension = () => {
+  const translate = useTranslate();
   const { title, add_button, variant: variantId } = useExtensionSettings();
   const hasWarrantyDaysInCart = useHasWarrantyDaysInCart();
   const warrantyAdded = useWarrantyAdded({ variant: variantId });
@@ -23,7 +26,7 @@ export const Extension = () => {
       <s-stack direction="block" gap="small">
         {error ? (
           <s-banner
-            heading="Unable to add warranty"
+            heading={translate(I18N.addWarrantyErrorHeading)}
             tone="critical"
             dismissible
             onDismiss={clearError}
@@ -33,7 +36,6 @@ export const Extension = () => {
         ) : null}
         <s-heading>{title}</s-heading>
         <Card
-          isEmpty={!card}
           src={card?.image?.url ?? card?.product?.featuredImage?.url}
           title={card?.product?.title ?? card?.title}
           price={

@@ -3,23 +3,12 @@ export const Card = ({
   title,
   description,
   price,
-  isEmpty,
 }: {
-  isEmpty: boolean;
   src?: string;
   title?: string;
   description?: string;
   price?: string;
 }) => {
-  if (isEmpty) {
-    return (
-      <s-box padding="base" border="base" borderRadius="base">
-        <s-stack direction="block" gap="small">
-          Карточка товара не найдена
-        </s-stack>
-      </s-box>
-    );
-  }
   return (
     <s-box
       padding="base"
