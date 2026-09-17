@@ -1,7 +1,16 @@
-query CartInput {
+query CartInput($collectionIds: [ID!]) {
   cart {
     lines {
       id
+      quantity
+      merchandise {
+        __typename
+        ... on ProductVariant {
+          product {
+            inAnyCollection(ids: $collectionIds)
+          }
+        }
+      }
     }
   }
   discount {

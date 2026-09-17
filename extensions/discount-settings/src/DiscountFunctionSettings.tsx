@@ -1,103 +1,70 @@
 import "@shopify/ui-extensions/preact";
 import { render } from "preact";
-import { useEffect, useMemo, useState } from "preact/hooks";
-
-const METAFIELD_NAMESPACE = "$app";
-const METAFIELD_KEY = "function-configuration";
-const DEFAULT_PERCENTAGE = 100;
+import { useState } from "preact/hooks";
+import { DiscountThresholds } from "./compose/discount-thresholds";
+import { SelectCollection } from "./compose/select-collection";
+import { useDiscountMetafield } from "./hooks/use-discount-metafield";
 
 export default async () => {
   render(<App />, document.body);
 };
 
-function parseFirstLinePercentage(metafields) {
-  const raw = metafields?.find(
-    (metafield) => metafield.key === METAFIELD_KEY,
-  )?.value;
-
-  try {
-    const parsed = JSON.parse(raw || "{}");
-    const percentage = Number(parsed.firstLineProductPercentage);
-    if (Number.isFinite(percentage)) {
-      return Math.min(100, Math.max(0, percentage));
-    }
-  } catch {
-    // ignore invalid JSON
-  }
-
-  return DEFAULT_PERCENTAGE;
-}
-
 function App() {
-  const { applyMetafieldChange, data, i18n } = shopify;
-
+  const { i18n } = shopify;
   const [saveError, setSaveError] = useState("");
-  const persistedPercentage = useMemo(
-    () => parseFirstLinePercentage(data?.metafields),
-    [data?.metafields],
-  );
+  const { metafield, loading, stageFields, save, reset, collection } =
+    useDiscountMetafield();
 
-  const [percentage, setPercentage] = useState(persistedPercentage);
-  const [savedPercentage, setSavedPercentage] = useState(persistedPercentage);
-
-  useEffect(() => {
-    setPercentage(persistedPercentage);
-    setSavedPercentage(persistedPercentage);
-  }, [persistedPercentage]);
-
-  async function applyExtensionMetafieldChange() {
+  async function saveMetafield() {
     setSaveError("");
 
-    const result = await applyMetafieldChange({
-      type: "updateMetafield",
-      namespace: METAFIELD_NAMESPACE,
-      key: METAFIELD_KEY,
-      value: JSON.stringify({ firstLineProductPercentage: percentage }),
-      valueType: "json",
-    });
-
-    if (result.type === "error") {
-      setSaveError(result.message);
-      throw new Error(result.message);
+    if (!collection) {
+      const message = i18n.translate("collectionRequired");
+      setSaveError(message);
+      throw new Error(message);
     }
 
-    setSavedPercentage(percentage);
+    try {
+      await save();
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : i18n.translate("saveError");
+      setSaveError(message);
+      throw error;
+    }
   }
 
   function resetForm() {
     setSaveError("");
-    setPercentage(savedPercentage);
+    reset();
   }
 
   return (
     <s-function-settings
       onSubmit={(event) => {
-        event.waitUntil(applyExtensionMetafieldChange());
+        event?.preventDefault();
+        event.waitUntil?.(saveMetafield());
       }}
       onReset={resetForm}
       onError={(event) => {
         setSaveError(event.error?.message || i18n.translate("saveError"));
       }}
     >
-      {!data?.metafields ? (
+      {loading ? (
         <s-text>{i18n.translate("loading")}</s-text>
       ) : (
         <s-section>
           <s-stack gap="base">
             {saveError && <s-banner tone="critical">{saveError}</s-banner>}
-            <s-number-field
-              label={i18n.translate("percentageLabel")}
-              name="firstLineProductPercentage"
-              value={String(percentage)}
-              defaultValue={String(savedPercentage)}
-              min={0}
-              max={100}
-              suffix="%"
-              onChange={(event) =>
-                setPercentage(Number(event.currentTarget.value))
-              }
+            <SelectCollection
+              collection={collection}
+              onChange={stageFields}
+              onError={setSaveError}
             />
-            <s-text color="subdued">{i18n.translate("percentageHelp")}</s-text>
+            <DiscountThresholds
+              thresholds={metafield?.thresholds ?? null}
+              onChange={(thresholds) => stageFields({ thresholds })}
+            />
           </s-stack>
         </s-section>
       )}

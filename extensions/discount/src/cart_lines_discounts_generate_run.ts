@@ -4,36 +4,43 @@ import {
   type CartInput,
   type CartLinesDiscountsGenerateRunResult,
 } from '../generated/api';
-
-type DiscountFunctionConfiguration = {
-  firstLineProductPercentage?: number;
-};
-
-function getFirstLinePercentage(input: CartInput): number {
-  const raw = input.discount.metafield?.jsonValue as
-    | DiscountFunctionConfiguration
-    | null
-    | undefined;
-
-  const percentage = Number(raw?.firstLineProductPercentage);
-  if (!Number.isFinite(percentage)) {
-    return 100;
-  }
-
-  return Math.min(100, Math.max(0, percentage));
-}
+import {
+  parseDiscountConfiguration,
+  resolveDiscountPercentage,
+} from './discount-configuration';
 
 export function cartLinesDiscountsGenerateRun(
   input: CartInput,
 ): CartLinesDiscountsGenerateRunResult {
-  const firstLine = input.cart.lines[0];
-  const percentage = getFirstLinePercentage(input);
+  if (!input.discount.discountClasses.includes(DiscountClass.Product)) {
+    return {operations: []};
+  }
 
-  if (
-    !firstLine ||
-    percentage <= 0 ||
-    !input.discount.discountClasses.includes(DiscountClass.Product)
-  ) {
+  const thresholds = parseDiscountConfiguration(
+    input.discount.metafield?.jsonValue,
+  );
+
+  const eligibleLines = input.cart.lines.filter(
+    (line) =>
+      line.merchandise.__typename === 'ProductVariant' &&
+      line.merchandise.product.inAnyCollection,
+  );
+
+  if (eligibleLines.length === 0) {
+    return {operations: []};
+  }
+
+  const collectionItemQuantity = eligibleLines.reduce(
+    (total, line) => total + line.quantity,
+    0,
+  );
+
+  const percentage = resolveDiscountPercentage(
+    thresholds,
+    collectionItemQuantity,
+  );
+
+  if (percentage === null || percentage <= 0) {
     return {operations: []};
   }
 
@@ -43,9 +50,11 @@ export function cartLinesDiscountsGenerateRun(
         productDiscountsAdd: {
           candidates: [
             {
-              message: `${percentage}% off first item`,
-              targets: [{cartLine: {id: firstLine.id}}],
-              value: {percentage: {value: percentage}},
+              message: `${percentage}% off selected collection items`,
+              targets: eligibleLines.map((line) => ({
+                cartLine: {id: line.id},
+              })),
+              value: {percentage: {value: String(percentage)}},
             },
           ],
           selectionStrategy: ProductDiscountSelectionStrategy.First,
