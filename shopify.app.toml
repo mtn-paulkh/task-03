@@ -7,7 +7,15 @@ embedded = true
 
 [access_scopes]
 # Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
-scopes = "write_products,write_metaobjects,write_metaobject_definitions"
+scopes = "write_products,write_metaobjects,write_metaobject_definitions,write_discounts,read_discounts"
+
+[discount.metafields.app.function-configuration]
+type = "json"
+name = "Function configuration"
+description = "JSON settings for the discount Function"
+
+  [discount.metafields.app.function-configuration.access]
+  admin = "merchant_read_write"
 
 [product.metafields.custom.warranty_days]
 type = "number_integer"

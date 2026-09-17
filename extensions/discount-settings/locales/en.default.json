@@ -1,0 +1,8 @@
+{
+  "name": "Discount function settings",
+  "description": "Configure tier and product rules for the discount function",
+  "percentageLabel": "First cart line — product discount",
+  "percentageHelp": "Applies to the first line in the cart (product discount class only).",
+  "loading": "Loading configuration…",
+  "saveError": "Couldn't save the discount configuration."
+}

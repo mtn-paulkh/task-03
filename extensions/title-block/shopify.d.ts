@@ -13,6 +13,12 @@ declare module './src/compose/Checkout.jsx' {
 }
 
 //@ts-ignore
+declare module './src/pure-model/i18n-keys.ts' {
+  const shopify: import('@shopify/ui-extensions/purchase.checkout.block.render').Api;
+  const globalThis: { shopify: typeof shopify };
+}
+
+//@ts-ignore
 declare module './src/model/use-card.tsx' {
   const shopify: import('@shopify/ui-extensions/purchase.checkout.block.render').Api;
   const globalThis: { shopify: typeof shopify };
